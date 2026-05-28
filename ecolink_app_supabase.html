@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ecolink — Laboratório de Solos</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f5f5f5;font-size:13px;color:#333}
+.app{max-width:980px;margin:0 auto;padding:1rem}
+.header{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #ddd;border-radius:8px;padding:.75rem 1.25rem;margin-bottom:1rem}
+.logo-sq{width:40px;height:40px;background:#2ec043;border-radius:8px;flex-shrink:0}
+.brand{font-size:15px;font-weight:700;color:#1b5e20}
+.brand-sub{font-size:11px;color:#777}
+.nav{display:flex;gap:8px}
+.btn{padding:7px 16px;border-radius:6px;border:1.5px solid #ccc;background:#fff;cursor:pointer;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;white-space:nowrap;text-decoration:none}
+.btn:hover{background:#f5f5f5}
+.btn-green{background:#2ec043;border-color:#25a337;color:#fff}
+.btn-green:hover{background:#25a337}
+.btn-blue{background:#1565c0;border-color:#0d47a1;color:#fff}
+.btn-blue:hover{background:#0d47a1}
+.section{display:none}.section.active{display:block}
+.card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:1.25rem;margin-bottom:1rem}
+.sec-title{font-size:11px;font-weight:700;color:#fff;background:#2ec043;padding:5px 10px;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:3px}
+.field label{font-size:11px;color:#555;font-weight:700;text-transform:uppercase}
+.field input,.field select,.field textarea{border:1px solid #bbb;padding:5px 8px;font-size:13px;font-family:Arial;width:100%;border-radius:4px}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:#2ec043;background:#f9fbe7}
+.field textarea{resize:vertical;min-height:60px}
+.rg-badge{display:inline-flex;align-items:center;gap:6px;background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:6px;padding:5px 14px;font-size:14px;font-weight:700;color:#1b5e20;margin-bottom:1rem}
+.natureza-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+.radio-item{display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;padding:7px 10px;border-radius:6px;border:1px solid #ccc;background:#fff}
+.radio-item input{width:14px;height:14px;accent-color:#2ec043;flex-shrink:0}
+.cbr-block{background:#f9fbe7;border:1px solid #c8e6c9;border-radius:6px;padding:10px;margin-top:8px}
+.divider{height:1px;background:#eee;margin:12px 0}
+.comp-block{border:1px solid #ddd;border-radius:6px;padding:10px;margin-bottom:8px;background:#f9f9f9}
+.comp-num{font-size:11px;font-weight:700;color:#555;background:#fff;border:1px solid #ccc;border-radius:4px;padding:2px 8px;display:inline-block;margin-bottom:8px}
+.checks-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:8px}
+.check-item{display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;padding:5px 7px;border-radius:4px;border:1px solid #ccc;background:#fff}
+.check-item input{width:13px;height:13px;flex-shrink:0}
+.radio-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px}
+.radio-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:8px}
+.ri-sm{display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;padding:5px 8px;border-radius:4px;border:1px solid #ccc;background:#fff;line-height:1.4}
+.ri-sm input{width:13px;height:13px;flex-shrink:0;accent-color:#2ec043}
+.btn-add-comp{width:100%;justify-content:center;margin-top:6px;padding:8px;border:1.5px dashed #aaa;background:#f5f5f5;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700;color:#777;display:flex;align-items:center;gap:6px}
+.btn-add-comp:hover{border-color:#2ec043;color:#2ec043;background:#f0fff0}
+.btn-sm{padding:3px 10px;font-size:11px;font-weight:700;border:1.5px solid #ccc;background:#fff;border-radius:4px;cursor:pointer;display:flex;align-items:center;gap:4px}
+.excel-wrap{border:1.5px solid #a5d6a7;border-radius:8px;overflow:hidden;margin-bottom:1rem}
+.excel-table{width:100%;border-collapse:collapse;font-size:13px}
+.excel-table th{background:#2ec043;color:#fff;font-weight:700;font-size:12px;padding:8px 10px;border-right:1px solid #25a337;text-align:left;white-space:nowrap}
+.excel-table th:last-child{border-right:none}
+.excel-table td{padding:8px 10px;border-bottom:1px solid #c8e6c9;border-right:1px solid #e0e0e0;vertical-align:middle}
+.excel-table td:last-child{border-right:none}
+.excel-table tbody tr{cursor:pointer}
+.excel-table tbody tr:hover td{background:#f1f8e9}
+.excel-table tbody tr:nth-child(even) td{background:#fafff8}
+.excel-table tbody tr:nth-child(even):hover td{background:#f1f8e9}
+.pill{font-size:11px;padding:2px 10px;border-radius:100px;font-weight:700;display:inline-block;white-space:nowrap}
+.s-ag{background:#fff8e1;color:#e65100;border:1px solid #ffcc02}
+.s-en{background:#e3f2fd;color:#0d47a1;border:1px solid #90caf9}
+.s-co{background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7}
+.empty{text-align:center;padding:3rem;color:#999;font-size:14px}
+.btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:1rem}
+.filter-bar{background:#fff;border:1px solid #ddd;border-radius:6px;padding:8px 12px;margin-bottom:10px;display:flex;gap:8px;align-items:center}
+.sec-actions{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.backup-footer{border:1px solid #ddd;border-radius:6px;padding:10px 14px;margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;background:#f9f9f9}
+.loading{text-align:center;padding:2rem;color:#2ec043;font-weight:700;font-size:14px}
+.toast{position:fixed;bottom:20px;right:20px;background:#1b5e20;color:#fff;padding:10px 18px;border-radius:6px;font-weight:700;font-size:13px;display:none;z-index:9999}
+.toast.show{display:block}
+.toast.erro{background:#c62828}
+.det-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px}
+.det-table th{background:#2ec043;color:#fff;font-size:11px;font-weight:700;padding:6px 10px;text-align:left;border-right:1px solid #25a337}
+.det-table td{padding:7px 10px;border:1px solid #c8e6c9}
+.det-sec{font-size:11px;font-weight:700;color:#fff;text-transform:uppercase;padding:6px 10px;background:#2ec043;margin-bottom:0}
+.comp-det{border:1px solid #c8e6c9;border-radius:6px;margin-bottom:8px;overflow:hidden}
+.comp-det-h{background:#e8f5e9;border-bottom:1px solid #a5d6a7;padding:7px 10px;font-size:13px;font-weight:700;color:#1b5e20}
+.comp-det-t{width:100%;border-collapse:collapse;font-size:12px}
+.comp-det-t td{padding:6px 10px;border-bottom:1px solid #f0f0f0}
+.comp-det-t tr:last-child td{border-bottom:none}
+.comp-det-t td:first-child{width:150px;font-weight:700;color:#555;background:#f9fbe7}
+.alert-info{background:#e3f2fd;border:1px solid #90caf9;border-radius:6px;padding:10px 14px;font-size:12px;color:#0d47a1;margin-bottom:12px;display:flex;gap:8px}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="logo-sq"></div>
+      <div><div class="brand">Ecolink — Laboratório de Solos</div><div class="brand-sub">Sistema de Gestão de Ensaios</div></div>
+    </div>
+    <div class="nav">
+      <button class="btn btn-green" id="nav-painel" onclick="showSection('painel')">⊞ Painel</button>
+      <button class="btn" id="nav-novo" onclick="showSection('novo')">＋ Novo pedido</button>
+    </div>
+  </div>
+
+  <div id="sec-painel" class="section active">
+    <div class="sec-actions">
+      <div style="font-size:13px;color:#777">Pedidos: <strong id="total-pedidos">—</strong></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="exportarCSV()">↓ Exportar CSV</button>
+        <button class="btn" onclick="showSection('novo')">＋ Novo pedido</button>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <select id="filtro-status" onchange="renderPainel()" style="width:auto;font-size:12px;border:1px solid #ccc;padding:3px 6px;border-radius:4px">
+        <option value="">Todos os status</option>
+        <option>Aguardando secagem</option><option>Em ensaio</option><option>Laudo emitido</option>
+      </select>
+      <input id="filtro-busca" type="text" placeholder="Buscar cliente, obra ou cidade..." onkeyup="renderPainel()" style="flex:1;font-size:12px;border:1px solid #ccc;padding:4px 8px;border-radius:4px">
+      <button class="btn" onclick="carregarPedidos()" title="Atualizar">↺ Atualizar</button>
+    </div>
+    <div id="lista-pedidos"><div class="loading">Carregando...</div></div>
+    <div class="backup-footer">
+      <div style="font-size:12px;color:#777">Dados salvos no Supabase (São Paulo) — backup automático diário.</div>
+      <button class="btn btn-blue" onclick="exportarCSV()">↓ Exportar CSV</button>
+    </div>
+  </div>
+
+  <div id="sec-novo" class="section">
+    <div class="alert-info">ℹ️ <span>Pode salvar com campos incompletos e editar depois. O RG é obrigatório.</span></div>
+    <div class="card">
+      <div class="sec-title">Ficha 0 — Recebimento da amostra</div>
+      <div class="rg-badge"># <span id="rg-display">RG-____</span></div>
+      <div class="form-grid" style="margin-bottom:10px">
+        <div class="field"><label>Nº Registro (RG) *</label><input id="f-rg" type="text" placeholder="RG-2026-001" oninput="document.getElementById('rg-display').textContent=this.value||'RG-____'"></div>
+        <div class="field"><label>Data de recebimento</label><input id="f-data-rec" type="date"></div>
+        <div class="field"><label>Empresa contratante</label><input id="f-empresa" type="text" placeholder="Ex: Casa & Terra"></div>
+        <div class="field"><label>Nome da obra / empreendimento</label><input id="f-obra" type="text" placeholder="Ex: Loteamento Porto Real"></div>
+        <div class="field"><label>Responsável do contratante</label><input id="f-responsavel" type="text" placeholder="Nome e cargo"></div>
+        <div class="field"><label>E-mail do contratante</label><input id="f-email" type="email" placeholder="email@empresa.com"></div>
+        <div class="field"><label>Cidade / Estado</label><input id="f-cidade" type="text" placeholder="Ex: Goiânia - GO"></div>
+        <div class="field"><label>Responsável comercial Ecolink</label>
+          <select id="f-comercial"><option value="">Selecione...</option><option>Hebert Filho</option><option>Junior Macedo</option><option>Danilo Geotecnus</option><option>Marcelo Britec</option></select>
+        </div>
+        <div class="field"><label>Previsão início dos ensaios</label><input id="f-data-inicio" type="date"></div>
+        <div class="field"><label>Previsão de conclusão</label><input id="f-data-fim" type="date"></div>
+        <div class="field"><label>Status do pedido</label>
+          <select id="f-status"><option>Aguardando secagem</option><option>Em ensaio</option><option>Laudo emitido</option></select>
+        </div>
+        <div class="field"><label>Link das fotos no Drive</label><input id="f-link-fotos" type="url" placeholder="Cole o link da pasta do Google Drive"></div>
+      </div>
+      <div class="divider"></div>
+      <div style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;margin-bottom:8px">Natureza da obra</div>
+      <div class="natureza-grid">
+        <label class="radio-item"><input type="radio" name="natureza" value="Loteamento com projeto detalhado"> Loteamento com projeto detalhado</label>
+        <label class="radio-item"><input type="radio" name="natureza" value="Loteamento só com referência CBR"> Loteamento só com referência CBR</label>
+        <label class="radio-item"><input type="radio" name="natureza" value="Via vicinal"> Via vicinal</label>
+        <label class="radio-item"><input type="radio" name="natureza" value="Pátio / aterro sem projeto"> Pátio / aterro sem projeto</label>
+        <label class="radio-item"><input type="radio" name="natureza" value="Pátio / aterro com cargas e histórico"> Pátio / aterro com cargas e histórico</label>
+        <label class="radio-item"><input type="radio" name="natureza" value="Confinamentos agro"> Confinamentos agro</label>
+        <label class="radio-item"><input type="radio" name="natureza" value="Represas"> Represas</label>
+      </div>
+      <div class="cbr-block">
+        <div style="font-size:11px;font-weight:700;color:#1b5e20;margin-bottom:8px">Parâmetros de projeto</div>
+        <div class="form-grid">
+          <div class="field"><label>CBR pretendido (%)</label><input type="number" id="f-cbr-alvo" placeholder="Ex: 40"></div>
+          <div class="field"><label>Espessura da camada (cm)</label><input type="text" id="f-espessura" placeholder="Ex: 20"></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="field"><label>Observações gerais</label><textarea id="f-obs" placeholder="Informações adicionais..."></textarea></div>
+    </div>
+
+    <div class="card">
+      <div class="sec-title">Ficha 1 — Identificação dos ensaios</div>
+      <div id="composicoes-container"></div>
+      <button class="btn-add-comp" onclick="adicionarComposicao()">＋ Adicionar composição</button>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn" onclick="cancelarEdicao()">← Cancelar</button>
+      <button class="btn btn-green" onclick="salvarPedido()">💾 Salvar pedido</button>
+    </div>
+  </div>
+
+  <div id="sec-detalhe" class="section">
+    <div id="detalhe-content"></div>
+    <div class="btn-row">
+      <button class="btn" onclick="showSection('painel')">← Voltar</button>
+      <button class="btn" onclick="editarPedido()">✎ Editar</button>
+      <button class="btn btn-green" onclick="gerarConfirmacao()">📄 Confirmação para cliente</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPA_URL = 'https://kknlxhnabuqcbfcsqqda.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtrbmx4aG5hYnVxY2JmY3NxcWRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NzMwNTIsImV4cCI6MjA5NTU0OTA1Mn0.qbOC2e9ehUWpVwBj0qvHH6nsQ3-eCkxQQDtxYmwfHA8';
+
+const { createClient } = supabase;
+const db = createClient(SUPA_URL, SUPA_KEY);
+
+let pedidos = [], composicoesAtivas = 0, pedidoEditando = null;
+
+async function carregarPedidos() {
+  document.getElementById('lista-pedidos').innerHTML = '<div class="loading">⏳ Carregando...</div>';
+  try {
+    const { data, error } = await db.from('pedidos').select('*').order('criado_em', { ascending: false });
+    if (error) throw error;
+    pedidos = data || [];
+    renderPainel();
+  } catch(e) {
+    document.getElementById('lista-pedidos').innerHTML = '<div class="empty">❌ Erro ao conectar com o banco de dados.<br>Verifique sua conexão com a internet.</div>';
+    console.error(e);
+  }
+}
+
+function renderPainel() {
+  const fs = document.getElementById('filtro-status').value;
+  const fb = document.getElementById('filtro-busca').value.toLowerCase();
+  document.getElementById('total-pedidos').textContent = pedidos.length;
+  const fil = pedidos.filter(p =>
+    (!fs || p.status === fs) &&
+    (!fb || (p.empresa||'').toLowerCase().includes(fb) || (p.obra||'').toLowerCase().includes(fb) || (p.cidade||'').toLowerCase().includes(fb))
+  );
+  if (!fil.length) {
+    document.getElementById('lista-pedidos').innerHTML = '<div class="empty">Nenhum pedido encontrado.<br>Clique em "Novo pedido" para começar.</div>';
+    return;
+  }
+  const linhas = fil.map(p => {
+    const idx = pedidos.findIndex(x => x.rg === p.rg);
+    const sc = p.status === 'Aguardando secagem' ? 's-ag' : p.status === 'Em ensaio' ? 's-en' : 's-co';
+    const dt = p.data_rec ? new Date(p.data_rec + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+    const df = p.data_fim ? new Date(p.data_fim + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+    const nc = Array.isArray(p.composicoes) ? p.composicoes.length : 0;
+    const temFotos = p.link_fotos ? '📷' : '—';
+    return `<tr onclick="verDetalhe(${idx})">
+      <td style="font-weight:700;color:#0d47a1;white-space:nowrap">${p.rg}</td>
+      <td style="font-weight:700">${p.obra || '—'}</td>
+      <td>${p.empresa || '—'}</td>
+      <td>${p.cidade || '—'}</td>
+      <td style="text-align:center;font-weight:700">${nc}</td>
+      <td style="text-align:center">${temFotos}</td>
+      <td><span class="pill ${sc}">${p.status}</span></td>
+      <td style="white-space:nowrap">${dt}</td>
+      <td style="white-space:nowrap">${df}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('lista-pedidos').innerHTML = `<div class="excel-wrap"><table class="excel-table">
+    <thead><tr>
+      <th>Nº Registro</th><th>Obra</th><th>Cliente</th><th>Cidade</th>
+      <th style="text-align:center">Comp.</th><th style="text-align:center">Fotos</th>
+      <th>Status</th><th>Recebimento</th><th>Conclusão</th>
+    </tr></thead>
+    <tbody>${linhas}</tbody>
+  </table></div>`;
+}
+
+function adicionarComposicao() {
+  composicoesAtivas++;
+  if (composicoesAtivas > 8) { alert('Máximo de 8 composições.'); composicoesAtivas--; return; }
+  const n = composicoesAtivas;
+  const div = document.createElement('div');
+  div.className = 'comp-block';
+  div.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <span class="comp-num">Composição ${n}</span>
+    <button class="btn-sm" onclick="removerComp(this)">✕ Remover</button>
+  </div>
+  <div class="field" style="margin-bottom:8px"><label>Descrição do solo / mistura</label><input type="text" class="comp-desc" placeholder="Ex: Argila escura natural"></div>
+  <div style="font-size:10px;font-weight:700;color:#555;text-transform:uppercase;margin-bottom:5px">Ensaios a realizar</div>
+  <div class="checks-grid">
+    <label class="check-item"><input type="checkbox" data-key="gran"> Granulometria</label>
+    <label class="check-item"><input type="checkbox" data-key="ip"> IP (LL/LP)</label>
+    <label class="check-item"><input type="checkbox" data-key="mct"> MCT</label>
+    <label class="check-item"><input type="checkbox" data-key="alcock"> Caixa de Alcock</label>
+    <label class="check-item"><input type="checkbox" data-key="erod"> Erodibilidade</label>
+    <label class="check-item"><input type="checkbox" data-key="proctor-nat"> Proctor CBR in-natura</label>
+    <label class="check-item"><input type="checkbox" data-key="proctor-a"> Proctor CBR Ecostab-A</label>
+    <label class="check-item"><input type="checkbox" data-key="proctor-b"> Proctor CBR Ecostab-B</label>
+    <label class="check-item"><input type="checkbox" data-key="proctor-c"> Proctor CBR Ecostab-C</label>
+  </div>
+  <div style="font-size:10px;font-weight:700;color:#555;text-transform:uppercase;margin-bottom:5px">Energia Proctor / CBR</div>
+  <div class="radio-grid-2 comp-energia-row" style="margin-bottom:8px">
+    <label class="ri-sm"><input type="radio" name="en-${n}" value="Normal (12 golpes)"> Normal — 12 golpes</label>
+    <label class="ri-sm"><input type="radio" name="en-${n}" value="Intermediária (26 golpes)"> Intermediária — 26 golpes</label>
+    <label class="ri-sm"><input type="radio" name="en-${n}" value="Intermodificada (40 golpes)"> Intermodificada — 40 golpes</label>
+    <label class="ri-sm"><input type="radio" name="en-${n}" value="Modificada (56 golpes)"> Modificada — 56 golpes</label>
+  </div>
+  <div style="font-size:10px;font-weight:700;color:#555;text-transform:uppercase;margin-bottom:5px">Protocolo de ensaio</div>
+  <div class="radio-grid-3" style="margin-bottom:8px">
+    <label class="ri-sm"><input type="radio" name="pr-${n}" value="DNIT In-natura (96h)"> DNIT In-natura<br><span style="font-size:10px;color:#999">imersão 96h</span></label>
+    <label class="ri-sm"><input type="radio" name="pr-${n}" value="DNIT Estabilizado (96h)"> DNIT Estabilizado<br><span style="font-size:10px;color:#999">imersão 96h</span></label>
+    <label class="ri-sm"><input type="radio" name="pr-${n}" value="Norma Padrão APIS"> Norma Padrão APIS<br><span style="font-size:10px;color:#999">48h repouso / 96h</span></label>
+  </div>
+  <div class="form-grid">
+    <div class="field"><label>Dosagem Ecostab</label><input type="text" class="inp-dosagem" placeholder="Ex: 28g | Natural"></div>
+    <div class="field"><label>Reagente químico</label><input type="text" class="inp-reagente" placeholder="Ex: Cal 1%"></div>
+  </div>
+  <div class="field" style="margin-top:8px"><label>Identificação dos CPs</label><input type="text" class="inp-cps" placeholder="Ex: CP10, CP20, CP30"></div>`;
+  document.getElementById('composicoes-container').appendChild(div);
+}
+
+function removerComp(btn) {
+  btn.closest('.comp-block').remove();
+  composicoesAtivas--;
+  document.querySelectorAll('.comp-block').forEach((b, i) => b.querySelector('.comp-num').textContent = `Composição ${i + 1}`);
+}
+
+function coletarComposicoes() {
+  return [...document.querySelectorAll('.comp-block')].map((bl, i) => {
+    const ch = {};
+    bl.querySelectorAll('input[type=checkbox]').forEach(c => { ch[c.dataset.key] = c.checked; });
+    const en = bl.querySelector('.comp-energia-row input:checked');
+    const pr = bl.querySelector('input[name^="pr-"]:checked');
+    return {
+      id: i + 1, descricao: bl.querySelector('.comp-desc').value,
+      gran: ch.gran||false, ip: ch.ip||false, mct: ch.mct||false,
+      alcock: ch.alcock||false, erod: ch.erod||false,
+      'proctor-nat': ch['proctor-nat']||false, 'proctor-a': ch['proctor-a']||false,
+      'proctor-b': ch['proctor-b']||false, 'proctor-c': ch['proctor-c']||false,
+      energia: en ? en.value : '', protocolo: pr ? pr.value : '',
+      dosagem: bl.querySelector('.inp-dosagem').value,
+      reagente: bl.querySelector('.inp-reagente').value,
+      cps: bl.querySelector('.inp-cps').value
+    };
+  });
+}
+
+async function salvarPedido() {
+  const rg = document.getElementById('f-rg').value.trim();
+  if (!rg) { alert('Preencha o Nº do Registro (RG).'); return; }
+  const natureza = document.querySelector('input[name="natureza"]:checked');
+  const pedido = {
+    rg,
+    empresa: document.getElementById('f-empresa').value,
+    obra: document.getElementById('f-obra').value,
+    responsavel: document.getElementById('f-responsavel').value,
+    email: document.getElementById('f-email').value,
+    cidade: document.getElementById('f-cidade').value,
+    comercial: document.getElementById('f-comercial').value,
+    data_rec: document.getElementById('f-data-rec').value || null,
+    data_inicio: document.getElementById('f-data-inicio').value || null,
+    data_fim: document.getElementById('f-data-fim').value || null,
+    status: document.getElementById('f-status').value,
+    natureza: natureza ? natureza.value : '',
+    cbr_alvo: document.getElementById('f-cbr-alvo').value,
+    espessura: document.getElementById('f-espessura').value,
+    obs: document.getElementById('f-obs').value,
+    link_fotos: document.getElementById('f-link-fotos').value,
+    composicoes: coletarComposicoes(),
+    atualizado_em: new Date().toISOString()
+  };
+
+  mostrarToast('Salvando...');
+  try {
+    const { error } = await db.from('pedidos').upsert(pedido, { onConflict: 'rg' });
+    if (error) throw error;
+    mostrarToast('✅ Pedido salvo!');
+    await carregarPedidos();
+    resetForm();
+    showSection('painel');
+  } catch(e) {
+    mostrarToast('❌ Erro ao salvar: ' + e.message, true);
+    console.error(e);
+  }
+}
+
+function resetForm() {
+  pedidoEditando = null;
+  ['f-rg','f-empresa','f-obra','f-responsavel','f-email','f-cidade','f-obs',
+   'f-cbr-alvo','f-espessura','f-data-inicio','f-data-fim','f-link-fotos'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('f-comercial').value = '';
+  document.getElementById('f-status').value = 'Aguardando secagem';
+  document.getElementById('f-data-rec').value = new Date().toISOString().split('T')[0];
+  document.querySelectorAll('input[name="natureza"]').forEach(r => r.checked = false);
+  document.getElementById('composicoes-container').innerHTML = '';
+  composicoesAtivas = 0;
+  document.getElementById('rg-display').textContent = 'RG-____';
+  adicionarComposicao();
+}
+
+function cancelarEdicao() { resetForm(); showSection('painel'); }
+
+function verDetalhe(idx) {
+  const p = pedidos[idx];
+  window._detalheIdx = idx;
+  const dt = p.data_rec ? new Date(p.data_rec + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+  const di = p.data_inicio ? new Date(p.data_inicio + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+  const df = p.data_fim ? new Date(p.data_fim + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+  const sc = p.status === 'Aguardando secagem' ? 's-ag' : p.status === 'Em ensaio' ? 's-en' : 's-co';
+  const EL = {gran:'Granulometria',ip:'IP/LL/LP',mct:'MCT',alcock:'Caixa de Alcock',erod:'Erodibilidade',
+    'proctor-nat':'Proctor CBR in-natura','proctor-a':'Proctor CBR Ecostab-A',
+    'proctor-b':'Proctor CBR Ecostab-B','proctor-c':'Proctor CBR Ecostab-C'};
+  const comps = Array.isArray(p.composicoes) ? p.composicoes : [];
+  const compsHtml = comps.map(c => {
+    const ens = Object.entries(EL).filter(([k]) => c[k]).map(([,v]) => v).join(', ') || '—';
+    return `<div class="comp-det"><div class="comp-det-h">Composição ${c.id} — ${c.descricao||'—'}</div>
+      <table class="comp-det-t">
+        <tr><td>Ensaios</td><td>${ens}</td></tr>
+        <tr><td>Energia</td><td>${c.energia||'—'}</td></tr>
+        <tr><td>Protocolo</td><td>${c.protocolo||'—'}</td></tr>
+        <tr><td>Dosagem Ecostab</td><td>${c.dosagem||'—'}</td></tr>
+        <tr><td>Reagente</td><td>${c.reagente||'—'}</td></tr>
+        <tr><td>CPs</td><td>${c.cps||'—'}</td></tr>
+      </table></div>`;
+  }).join('');
+
+  const fotosHtml = p.link_fotos ? `
+    <div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:12px">
+      📷 <strong>Fotos:</strong> <a href="${p.link_fotos}" target="_blank" style="color:#1565c0">${p.link_fotos}</a>
+    </div>` : '';
+
+  document.getElementById('detalhe-content').innerHTML = `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+      <div>
+        <div class="rg-badge" style="margin-bottom:6px"># ${p.rg}</div>
+        <div style="font-size:17px;font-weight:700;color:#1b5e20;margin-bottom:2px">${p.obra||'—'}</div>
+        <div style="font-size:12px;color:#777">${p.empresa||'—'} · ${p.cidade||'—'}</div>
+      </div>
+      <span class="pill ${sc}">${p.status}</span>
+    </div>
+    <div class="det-sec">Identificação</div>
+    <table class="det-table">
+      <tr><th style="width:25%">Responsável</th><th style="width:25%">E-mail</th><th style="width:25%">Comercial</th><th style="width:25%">Natureza</th></tr>
+      <tr><td>${p.responsavel||'—'}</td><td>${p.email||'—'}</td><td>${p.comercial||'—'}</td><td>${p.natureza||'—'}</td></tr>
+      <tr><th>Recebimento</th><th>Início ensaios</th><th>Conclusão prev.</th><th>Parâmetros</th></tr>
+      <tr><td>${dt}</td><td>${di}</td><td>${df}</td><td>CBR: ${p.cbr_alvo||'—'}${p.cbr_alvo?'%':''} · ${p.espessura||'—'}${p.espessura?' cm':''}</td></tr>
+    </table>
+    ${p.obs ? `<div style="background:#f9fbe7;border:1px solid #c8e6c9;border-radius:6px;padding:8px 10px;margin-bottom:10px;font-size:12px">${p.obs}</div>` : ''}
+    ${fotosHtml}
+    <div class="det-sec" style="margin-bottom:8px">Composições (${comps.length})</div>
+    ${compsHtml || '<p style="font-size:12px;color:#999;padding:8px">Nenhuma composição registrada.</p>'}
+  </div>`;
+  showSection('detalhe');
+}
+
+function editarPedido() {
+  const p = pedidos[window._detalheIdx];
+  pedidoEditando = p.rg;
+  showSection('novo');
+  document.getElementById('f-rg').value = p.rg || '';
+  document.getElementById('rg-display').textContent = p.rg || 'RG-____';
+  document.getElementById('f-empresa').value = p.empresa || '';
+  document.getElementById('f-obra').value = p.obra || '';
+  document.getElementById('f-responsavel').value = p.responsavel || '';
+  document.getElementById('f-email').value = p.email || '';
+  document.getElementById('f-cidade').value = p.cidade || '';
+  document.getElementById('f-comercial').value = p.comercial || '';
+  document.getElementById('f-data-rec').value = p.data_rec || '';
+  document.getElementById('f-data-inicio').value = p.data_inicio || '';
+  document.getElementById('f-data-fim').value = p.data_fim || '';
+  document.getElementById('f-status').value = p.status || 'Aguardando secagem';
+  document.getElementById('f-cbr-alvo').value = p.cbr_alvo || '';
+  document.getElementById('f-espessura').value = p.espessura || '';
+  document.getElementById('f-obs').value = p.obs || '';
+  document.getElementById('f-link-fotos').value = p.link_fotos || '';
+  document.querySelectorAll('input[name="natureza"]').forEach(r => { if (r.value === p.natureza) r.checked = true; });
+  document.getElementById('composicoes-container').innerHTML = '';
+  composicoesAtivas = 0;
+  const comps = Array.isArray(p.composicoes) ? p.composicoes : [];
+  comps.forEach(c => {
+    adicionarComposicao();
+    const last = [...document.querySelectorAll('.comp-block')].at(-1);
+    last.querySelector('.comp-desc').value = c.descricao || '';
+    last.querySelector('.inp-dosagem').value = c.dosagem || '';
+    last.querySelector('.inp-reagente').value = c.reagente || '';
+    last.querySelector('.inp-cps').value = c.cps || '';
+    ['gran','ip','mct','alcock','erod','proctor-nat','proctor-a','proctor-b','proctor-c'].forEach(k => {
+      const cb = last.querySelector(`[data-key="${k}"]`); if (cb && c[k]) cb.checked = true;
+    });
+    last.querySelectorAll('.comp-energia-row input').forEach(r => { if (r.value === c.energia) r.checked = true; });
+    last.querySelectorAll('input[name^="pr-"]').forEach(r => { if (r.value === c.protocolo) r.checked = true; });
+  });
+}
+
+function gerarConfirmacao() {
+  const p = pedidos[window._detalheIdx];
+  const dtRec = p.data_rec ? new Date(p.data_rec + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+  const dtFim = p.data_fim ? new Date(p.data_fim + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+  const EL = {gran:'Análise Granulométrica',ip:'Limites de Liquidez e Plasticidade',mct:'Ensaio MCT',
+    alcock:'Caixa de Alcock',erod:'Erodibilidade',
+    'proctor-nat':'Proctor + CBR — Solo natural',
+    'proctor-a':'Proctor + CBR — Solo estabilizado (dosagem A)',
+    'proctor-b':'Proctor + CBR — Solo estabilizado (dosagem B)',
+    'proctor-c':'Proctor + CBR — Solo estabilizado (dosagem C)'};
+  const comps = Array.isArray(p.composicoes) ? p.composicoes : [];
+  const compsHTML = comps.map((c, i) => {
+    const ens = Object.entries(EL).filter(([k]) => c[k]).map(([,v]) => `<li style="margin-bottom:3px">${v}</li>`).join('');
+    return `<div style="margin-bottom:12px;padding:10px 12px;background:#f9fbe7;border-left:3px solid #2ec043;border-radius:4px">
+      <div style="font-weight:700;font-size:13px;margin-bottom:6px;color:#1b5e20">Composição ${i+1}: ${c.descricao||'—'}</div>
+      <ul style="margin-left:16px;font-size:12px;color:#333;line-height:1.7">${ens||'<li>Não informado</li>'}</ul>
+    </div>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Confirmação — ${p.rg}</title>
+  <style>body{font-family:Arial,sans-serif;max-width:720px;margin:0 auto;padding:28px;color:#333;font-size:13px;line-height:1.5}
+  .cab{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #2ec043;padding-bottom:14px;margin-bottom:20px}
+  .logo{width:40px;height:40px;background:#2ec043;border-radius:7px;flex-shrink:0}
+  table{width:100%;border-collapse:collapse;margin-bottom:16px}
+  th{background:#2ec043;color:#fff;font-size:11px;font-weight:700;padding:7px 10px;text-align:left;border-right:1px solid #25a337}
+  td{padding:7px 10px;border:1px solid #c8e6c9}
+  .prazo{font-size:17px;font-weight:700;color:#1b5e20}
+  .status-box{display:inline-block;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700;color:#1b5e20}
+  .aviso{background:#e3f2fd;border:1px solid #90caf9;border-radius:5px;padding:10px 14px;font-size:12px;color:#0d47a1;margin-bottom:16px;line-height:1.7}
+  .assin{margin-top:40px;display:flex;justify-content:space-around}
+  .assin-b{text-align:center}.assin-l{border-top:1px solid #333;width:200px;margin:0 auto 4px}
+  .rodape{margin-top:20px;border-top:1px solid #eee;padding-top:12px;font-size:10px;color:#999;display:flex;justify-content:space-between}
+  @media print{body{padding:14px}}</style></head><body>
+  <div class="cab">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="logo"></div>
+      <div><div style="font-size:16px;font-weight:700;color:#1b5e20">Ecolink Solutions</div>
+      <div style="font-size:10px;color:#777">Laboratório de Solos · ecolinksolutions.com.br</div></div>
+    </div>
+    <div style="background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:6px;padding:8px 16px;text-align:right">
+      <div style="font-size:10px;color:#1b5e20;font-weight:700">Nº de Registro</div>
+      <div style="font-size:20px;font-weight:700;color:#1b5e20">${p.rg}</div>
+    </div>
+  </div>
+  <div style="font-size:14px;font-weight:700;color:#1b5e20;margin-bottom:18px;text-align:center;text-transform:uppercase;letter-spacing:1px">Confirmação de Recebimento de Amostras</div>
+  <table><tr><th colspan="2">Dados do Contratante</th></tr>
+    <tr><td style="width:38%;font-weight:700">Empresa</td><td>${p.empresa||'—'}</td></tr>
+    <tr><td style="font-weight:700">Responsável</td><td>${p.responsavel||'—'}</td></tr>
+    <tr><td style="font-weight:700">E-mail</td><td>${p.email||'—'}</td></tr>
+    <tr><td style="font-weight:700">Obra</td><td>${p.obra||'—'}</td></tr>
+    <tr><td style="font-weight:700">Cidade</td><td>${p.cidade||'—'}</td></tr>
+    <tr><td style="font-weight:700">Natureza</td><td>${p.natureza||'—'}</td></tr>
+  </table>
+  <table><tr><th>Recebimento</th><th>Previsão de conclusão</th><th>Status</th></tr>
+    <tr><td><span class="prazo">${dtRec}</span></td><td><span class="prazo">${dtFim}</span></td>
+    <td><span class="status-box">${p.status}</span></td></tr>
+  </table>
+  ${p.cbr_alvo||p.espessura?`<table><tr><th colspan="2">Parâmetros de Projeto</th></tr>
+    ${p.cbr_alvo?`<tr><td style="width:38%;font-weight:700">CBR pretendido</td><td>${p.cbr_alvo}%</td></tr>`:''}
+    ${p.espessura?`<tr><td style="font-weight:700">Espessura</td><td>${p.espessura} cm</td></tr>`:''}</table>`:''}
+  <table><tr><th colspan="2">Ensaios Solicitados — ${comps.length} composição${comps.length!==1?'ões':''}</th></tr>
+    <tr><td colspan="2" style="padding:10px">${compsHTML||'<em>Não informado</em>'}</td></tr>
+  </table>
+  ${p.obs?`<table><tr><th>Observações</th></tr><tr><td style="line-height:1.7">${p.obs}</td></tr></table>`:''}
+  <div class="aviso"><strong>📋 Informações importantes:</strong><br>
+    • O prazo de conclusão é uma previsão e pode variar conforme as condições do material.<br>
+    • Ensaios realizados conforme normas ABNT/DNIT vigentes.<br>
+    • O laudo técnico será enviado ao e-mail cadastrado após conclusão e revisão.<br>
+    • Dúvidas: entre em contato com a Ecolink Solutions.
+  </div>
+  <div class="assin">
+    <div class="assin-b"><div class="assin-l"></div><div style="font-size:11px;font-weight:700">Dionério</div><div style="font-size:10px;color:#777">Laboratorista</div></div>
+    <div class="assin-b"><div class="assin-l"></div><div style="font-size:11px;font-weight:700">Hebert Filho</div><div style="font-size:10px;color:#777">Eng. Responsável Técnico</div></div>
+  </div>
+  <div class="rodape"><span>Ecolink Solutions — Laboratório de Solos</span>
+    <span>${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span>
+  </div>
+  <script>window.onload=function(){window.print()}<\/script></body></html>`;
+  const w = window.open('', '_blank');
+  if (w) { w.document.write(html); w.document.close(); } else alert('Permita popups para gerar o documento.');
+}
+
+function exportarCSV() {
+  if (!pedidos.length) { alert('Nenhum pedido.'); return; }
+  const lin = [['RG','Empresa','Obra','Cidade','Responsável','Comercial','Status','Natureza','CBR (%)','Espessura (cm)','Recebimento','Conclusão','Composições','Link Fotos','Observações']];
+  pedidos.forEach(p => lin.push([p.rg,p.empresa,p.obra,p.cidade,p.responsavel||'',p.comercial||'',
+    p.status,p.natureza||'',p.cbr_alvo||'',p.espessura||'',p.data_rec||'',p.data_fim||'',
+    (Array.isArray(p.composicoes)?p.composicoes:[]).length,p.link_fotos||'',p.obs||'']));
+  const csv = lin.map(l => l.map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = `ecolink-pedidos-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+}
+
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  document.querySelectorAll('.nav .btn').forEach(b => b.classList.remove('btn-green'));
+  if (id === 'painel') { document.getElementById('nav-painel').classList.add('btn-green'); renderPainel(); }
+  if (id === 'novo' && !pedidoEditando) resetForm();
+}
+
+function mostrarToast(msg, erro = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (erro ? ' erro' : '');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// Init
+document.getElementById('f-data-rec').value = new Date().toISOString().split('T')[0];
+adicionarComposicao();
+carregarPedidos();
+</script>
+</body>
+</html>
